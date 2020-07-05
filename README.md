@@ -2,7 +2,7 @@
 
 ## Introduction
 
-If you, like me, live in a household where there is more than one model of camera or mobile phone, you might endup with photos from all these cameras mixed up in just one place.
+If you, like me, live in a household where there is more than one model of camera or mobile phone, you might end up with photos from all these cameras mixed up in just one place.
 
 This can happen, among other reasons, if for example:
 
@@ -10,9 +10,9 @@ This can happen, among other reasons, if for example:
 
 - You receive photos that friends took of you / for you in some party and they get all mixed up in some directory.
 
-- You have more than one camera model that you own and would like to organize photos by camera in different directories
+- You have more than one camera model that you own and would like to organize photos by camera in different directories.
 
-Using the Photo by Camera Organizer script, you're able to identify which of the photos in a specific directory were taken by your friends camera, automatically move them to a separate directory so you can later send them to your friend, for example.
+Using the Photo by Camera Organizer script, you're able to identify which of the photos in a specific directory were taken by your friend's camera, then automatically move them to a separate directory so they can be better organized.
 
 ## Dependencies
 
@@ -24,7 +24,7 @@ For you to run this script, you need to have installed:
 
 ## Configuration
 
-Download this sourcecode, enter its directory via the terminal and run:
+Download this source code, enter its directory via the terminal and run:
 
 ```bash
 yarn
@@ -54,7 +54,11 @@ ts-node index.ts --brand=samsung --srcdir=/Users/jon/Desktop --outdir="/Users/jo
 ```
 
 ```
-ts-node index.ts --brand=samsung --srcdir=/Users/jon/Desktop --outdir="/Users/jon/Desktop/mydir xiaomi photos" --filetype=png
+ts-node index.ts --brand=xiaomi --srcdir=/Users/jon/Desktop --outdir="/Users/jon/Desktop/mydir xiaomi photos" --filetype=png
+```
+
+```
+ts-node index.ts --brand=xiaomi --srcdir=/Users/jon/Desktop --outdir=/Users/jon/Desktop/mydir
 ```
 
 ## Known limitations
