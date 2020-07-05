@@ -1,5 +1,6 @@
 import glob from "glob";
 import * as fs from "fs";
+import * as path from "path";
 import { promisify } from "util";
 import Exif, { ExifImage } from "exif";
 const listFilenames = promisify(glob);
@@ -29,7 +30,7 @@ export class PBCOrganizer {
 
     public async run(): Promise<void> {
         try {
-            const images = await listFilenames(`${this.cfg.srcdir}/*.${this.cfg.filetype || "jpg"}`, {});
+            const images = await listFilenames(`${this.cfg.srcdir}${path.sep}*.${this.cfg.filetype || "jpg"}`, {});
             const filesList = await this.identifyFiles(images);
             if (filesList.length === 0) {
                 console.log("No files were found");
@@ -81,7 +82,7 @@ export class PBCOrganizer {
         await mkdir(this.cfg.outdir, { recursive: true });
         for (const img of filesList) {
             console.log(`Moving ${img.filename} to ${this.cfg.outdir}`);
-            await moveFile(img.filename, `${this.cfg.outdir}/${img.filename.split("/").pop()}`);
+            await moveFile(img.filename, `${this.cfg.outdir}${path.sep}${img.filename.split(path.sep).pop()}`);
         }
     }
 }
