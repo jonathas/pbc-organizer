@@ -1,0 +1,44 @@
+{
+  "name": "pbc-organizer",
+  "version": "0.0.1",
+  "description": "Photo by Camera Organizer - Organize your moments!",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "lint": "eslint . --ext .ts",
+    "release": "release-it"
+  },
+  "author": "Jon Ribeiro <contact@jonathas.com>",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonathas/pbc-organizer.git"
+  },
+  "dependencies": {
+    "exif": "^0.6.0",
+    "glob": "^7.1.6",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.6",
+    "yargs": "^15.4.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "9.0.1",
+    "@commitlint/config-conventional": "^9.0.1",
+    "@types/exif": "^0.6.1",
+    "@types/glob": "^7.1.2",
+    "@types/node": "^14.0.14",
+    "@typescript-eslint/eslint-plugin": "2.34.0",
+    "@typescript-eslint/parser": "2.34.0",
+    "auto-changelog": "2.1.0",
+    "eslint": "6.8.0",
+    "eslint-plugin-security": "1.4.0",
+    "husky": "^4.2.5",
+    "release-it": "^13.6.4"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  }
+}

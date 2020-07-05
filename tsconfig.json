@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "target": "esnext",
+        "outDir": "dist",
+        "module": "commonjs",
+        "removeComments": false,
+        "watch": true,
+        "moduleResolution": "node",
+        "sourceMap": true
+    },
+    "include": [
+        "*"
+    ],
+    "exclude": [
+        "node_modules",
+        "coverage"
+    ]
+}
