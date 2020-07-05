@@ -37,6 +37,7 @@ export class PBCOrganizer {
                 return;
             }
             await this.moveFilesToOutDir(filesList);
+            console.log(`${filesList.length} files were moved to the outdir`);
         } catch (err) {
             console.error(err.message);
         }
@@ -45,9 +46,10 @@ export class PBCOrganizer {
     private async identifyFiles(images: string[]): Promise<FilesListItem[]> {
         const filesList: FilesListItem[] = [];
 
+        console.log("Finding files with Exif segment...");
         for (const img of images) {
             const exif = await this.getExifData(img);
-            if (exif.image.Make.toLowerCase() === this.cfg.brand.toLowerCase()) {
+            if (exif && exif.image.Make && exif.image.Make.toLowerCase() === this.cfg.brand.toLowerCase()) {
                 filesList.push(this.getFilesListItem(img, exif));
             }
         }
@@ -63,7 +65,7 @@ export class PBCOrganizer {
         return new Promise((resolve, reject) => {
             new ExifImage({ image }, function(err, data) {
                 if (err) {
-                    return reject(err);
+                    // console.log(`Error on ${image}: ${err.message}`);
                 }
                 return resolve(data);
             });
@@ -74,7 +76,7 @@ export class PBCOrganizer {
         return {
             filename: img,
             brand: exif.image.Make,
-            model: exif.image.Model
+            model: exif.image.Model || ""
         };
     }
 
