@@ -62,7 +62,7 @@ export class PBCOrganizer {
     }
 
     private getExifData(image: string): Promise<Exif.ExifData> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             new ExifImage({ image }, function(err, data) {
                 if (err) {
                     // console.log(`Error on ${image}: ${err.message}`);
