@@ -1,11 +1,7 @@
-import glob from "glob";
-import * as fs from "fs";
+import * as fs from "fs/promises";
 import * as path from "path";
-import { promisify } from "util";
+import { glob } from "glob";
 import Exif, { ExifImage } from "exif";
-const listFilenames = promisify(glob);
-const mkdir = promisify(fs.mkdir);
-const moveFile = promisify(fs.rename);
 
 export interface PBCOrganizerConfig {
     srcdir: string;
@@ -30,12 +26,14 @@ export class PBCOrganizer {
 
     public async run(): Promise<void> {
         try {
-            const images = await listFilenames(`${this.cfg.srcdir}${path.sep}*.${this.cfg.filetype || "jpg"}`, {});
+            const images = await glob(`${this.cfg.srcdir}${path.sep}*.${this.cfg.filetype || "jpg"}`, {});
             const filesList = await this.identifyFiles(images);
+
             if (filesList.length === 0) {
                 console.log("No files were found");
                 return;
             }
+
             await this.moveFilesToOutDir(filesList);
             console.log(`${filesList.length} files were moved to the outdir`);
         } catch (err) {
@@ -49,7 +47,7 @@ export class PBCOrganizer {
         console.log("Finding files with Exif segment...");
         for (const img of images) {
             const exif = await this.getExifData(img);
-            if (exif && exif.image.Make && exif.image.Make.toLowerCase() === this.cfg.brand.toLowerCase()) {
+            if (exif?.image?.Make && exif.image.Make.toLowerCase() === this.cfg.brand.toLowerCase()) {
                 filesList.push(this.getFilesListItem(img, exif));
             }
         }
@@ -63,9 +61,9 @@ export class PBCOrganizer {
 
     private getExifData(image: string): Promise<Exif.ExifData> {
         return new Promise((resolve) => {
-            new ExifImage({ image }, function(err, data) {
+            return new ExifImage({ image }, function(err, data) {
                 if (err) {
-                    // console.log(`Error on ${image}: ${err.message}`);
+                    console.log(`Error on ${image}: ${err.message}`);
                 }
                 return resolve(data);
             });
@@ -81,10 +79,10 @@ export class PBCOrganizer {
     }
 
     private async moveFilesToOutDir(filesList: FilesListItem[]): Promise<void> {
-        await mkdir(this.cfg.outdir, { recursive: true });
+        await fs.mkdir(this.cfg.outdir, { recursive: true });
         for (const img of filesList) {
             console.log(`Moving ${img.filename} to ${this.cfg.outdir}`);
-            await moveFile(img.filename, `${this.cfg.outdir}${path.sep}${img.filename.split(path.sep).pop()}`);
+            await fs.rename(img.filename, `${this.cfg.outdir}${path.sep}${img.filename.split(path.sep).pop()}`);
         }
     }
 }

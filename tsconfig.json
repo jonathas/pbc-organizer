@@ -5,13 +5,12 @@
         "outDir": "dist",
         "module": "commonjs",
         "removeComments": false,
-        "watch": true,
         "moduleResolution": "node",
         "sourceMap": true
     },
     "include": [
         "*"
-    ],
+, "lib/pbc-organizer.ts"    ],
     "exclude": [
         "node_modules",
         "coverage"

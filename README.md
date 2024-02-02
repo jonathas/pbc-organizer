@@ -14,20 +14,12 @@ This can happen, among other reasons, if for example:
 
 Using the Photo by Camera Organizer script, you're able to identify which of the photos in a specific directory were taken by your friend's camera, then automatically move them to a separate directory so they can be better organized.
 
-## Dependencies
-
-For you to run this script, you need to have installed:
-
-- [Node.js](https://nodejs.org/en/)
-
-- [yarn](https://yarnpkg.com/)
-
 ## Configuration
 
 Download this source code, enter its directory via the terminal and run:
 
 ```bash
-yarn
+npm i
 ```
 
 to install the required packages
