@@ -1,6 +1,6 @@
 {
   "name": "pbc-organizer",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Photo by Camera Organizer - Organize your moments!",
   "main": "index.js",
   "scripts": {
