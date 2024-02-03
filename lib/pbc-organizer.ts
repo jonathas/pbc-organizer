@@ -9,6 +9,7 @@ export interface PBCOrganizerConfig {
     brand: string;
     model?: string;
     filetype?: string;
+    mode?: string;
 }
 
 interface FilesListItem {
@@ -26,19 +27,48 @@ export class PBCOrganizer {
 
     public async run(): Promise<void> {
         try {
-            const images = await glob(`${this.cfg.srcdir}${path.sep}*.${this.cfg.filetype || "jpg"}`, {});
-            const filesList = await this.identifyFiles(images);
-
-            if (filesList.length === 0) {
-                console.log("No files were found");
-                return;
+            if (this.cfg.mode === "bydate") {
+                const images = await glob(`${this.cfg.srcdir}${path.sep}*.{jpg,mov,mp4,png}`, {});
+                await this.organizeByDate(images);
+            } else {
+                const images = await glob(`${this.cfg.srcdir}${path.sep}*.${this.cfg.filetype || "jpg"}`, {});
+                await this.organizeByExif(images);
             }
-
-            await this.moveFilesToOutDir(filesList);
-            console.log(`${filesList.length} files were moved to the outdir`);
         } catch (err) {
             console.error(err.message);
         }
+    }
+
+    private async organizeByDate(images: string[]) {
+        console.log("Organizing by date...");
+
+        for (const img of images) {
+            const filename = path.basename(img);
+            const dateMatch = filename.match(/\d{4}-\d{2}-\d{2}/);
+            
+            if (dateMatch) {
+                const date = dateMatch[0];
+                const outDir = `${this.cfg.outdir}${path.sep}${date}`;
+                await fs.mkdir(outDir, { recursive: true });
+                await fs.rename(img, `${outDir}${path.sep}${filename}`);
+            } else {
+                console.log(`Invalid filename format for ${img}`);
+            }
+        }
+
+        console.log(`${images.length} files were moved to the outdir`);
+    }
+
+    private async organizeByExif(images: string[]) {
+        const filesList = await this.identifyFiles(images);
+
+        if (filesList.length === 0) {
+            console.log("No files were found");
+            return;
+        }
+
+        await this.moveFilesToOutDir(filesList);
+        console.log(`${filesList.length} files were moved to the outdir`);
     }
 
     private async identifyFiles(images: string[]): Promise<FilesListItem[]> {
@@ -53,7 +83,7 @@ export class PBCOrganizer {
         }
 
         if (this.cfg.model) {
-            return filesList.filter(fl => fl.model.toLowerCase() === this.cfg.model.toLowerCase());
+            return filesList.filter(fl => (fl.model?.toLowerCase() ?? "") === (this.cfg.model?.toLowerCase() ?? ""));
         }
 
         return filesList;
@@ -73,7 +103,7 @@ export class PBCOrganizer {
     private getFilesListItem(img: string, exif: Exif.ExifData): FilesListItem {
         return {
             filename: img,
-            brand: exif.image.Make,
+            brand: exif.image.Make || "",
             model: exif.image.Model || ""
         };
     }

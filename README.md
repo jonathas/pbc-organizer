@@ -26,6 +26,8 @@ to install the required packages
 
 ## Usage
 
+### Organizig by camera model
+
 The following parameters can be passed to the script:
 
 ___________________
@@ -51,6 +53,25 @@ ts-node index.ts --brand=xiaomi --srcdir=/Users/jon/Desktop --outdir="/Users/jon
 
 ```
 ts-node index.ts --brand=xiaomi --srcdir=/Users/jon/Desktop --outdir=/Users/jon/Desktop/mydir
+```
+
+### Organizing by date
+
+If you'd like to group the files by date only:
+
+___________________
+
+| Command        | Result |
+| ------------- |:-------------:|
+| srcdir    | The directory path where your photos are located |
+| outdir  | The directory where you want to save the selected photos (the script will create it if it doesn't exist yet) |
+| mode  | bydate
+___________________
+
+Run it with ts-node. Examples:
+
+```
+ts-node index.ts --mode=bydate --srcdir=/Users/jon/Desktop --outdir="/Users/jon/Desktop/mydir with spaces"
 ```
 
 ## Known limitations
