@@ -1,7 +1,10 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import { glob } from "glob";
-import Exif, { ExifImage } from "exif";
+import dayjs from "dayjs";
+import sharp from "sharp";
+import exifReader from "exif-reader";
+import ffmpeg from "fluent-ffmpeg";
 
 export interface PBCOrganizerConfig {
     srcdir: string;
@@ -19,7 +22,11 @@ interface FilesListItem {
 }
 
 export class PBCOrganizer {
-    private cfg: PBCOrganizerConfig;
+    private readonly cfg: PBCOrganizerConfig;
+
+    private readonly extensions = "jpg,png,heic,mov,mp4";
+
+    private readonly dateRegex = /^\d{4}-\d{2}-\d{2}/;
 
     public constructor(cfg: PBCOrganizerConfig) {
         this.cfg = cfg;
@@ -27,10 +34,13 @@ export class PBCOrganizer {
 
     public async run(): Promise<void> {
         try {
+            await this.renameAllToDateTime();
+
             if (this.cfg.mode === "bydate") {
-                const images = await glob(`${this.cfg.srcdir}${path.sep}*.{jpg,mov,mp4,png}`, {});
+                const images = await glob(`${this.cfg.srcdir}${path.sep}*.{${this.extensions}}`, {});
                 await this.organizeByDate(images);
             } else {
+                // Default mode is by camera brand
                 const images = await glob(`${this.cfg.srcdir}${path.sep}*.${this.cfg.filetype || "jpg"}`, {});
                 await this.organizeByExif(images);
             }
@@ -39,17 +49,44 @@ export class PBCOrganizer {
         }
     }
 
+    private async renameAllToDateTime() {
+        const files = await glob(`${this.cfg.srcdir}${path.sep}*.{${this.extensions}}`, {});
+        const filesNotStartingWithDate = files.filter(file => !RegExp(this.dateRegex).exec(path.basename(file)));
+
+        if (!filesNotStartingWithDate.length) {
+            return;
+        }
+
+        console.log("Renaming all files to date-time format...");
+
+        for (const file of filesNotStartingWithDate) {
+            const exifData = await this.getExifData(file);
+            const dateTimeOriginal = exifData?.Photo?.DateTimeOriginal || exifData?.DateTimeOriginal;
+
+            const dateTime = dayjs(dateTimeOriginal).format('YYYY-MM-DD HH.mm.ss');
+            const newFileName = `${dateTime}${path.extname(file).toLocaleLowerCase()}`;
+            await fs.rename(file, `${path.dirname(file)}${path.sep}${newFileName}`);
+            
+            console.log(`Renamed ${path.basename(file)} to ${newFileName}`);
+        }
+
+        console.log(`${filesNotStartingWithDate.length} files were renamed`);
+    }
+
     private async organizeByDate(images: string[]) {
         console.log("Organizing by date...");
 
         for (const img of images) {
             const filename = path.basename(img);
-            const dateMatch = filename.match(/\d{4}-\d{2}-\d{2}/);
+            const dateMatch = RegExp(this.dateRegex).exec(filename);
             
             if (dateMatch) {
                 const date = dateMatch[0];
                 const outDir = `${this.cfg.outdir}${path.sep}${date}`;
-                await fs.mkdir(outDir, { recursive: true });
+
+                if (!(await this.dirExists(outDir))) {
+                    await fs.mkdir(outDir, { recursive: true });
+                }
                 await fs.rename(img, `${outDir}${path.sep}${filename}`);
             } else {
                 console.log(`Invalid filename format for ${img}`);
@@ -57,6 +94,15 @@ export class PBCOrganizer {
         }
 
         console.log(`${images.length} files were moved to the outdir`);
+    }
+
+    private async dirExists(dir: string): Promise<boolean> {
+        try {
+            await fs.access(dir);
+            return true;
+        } catch (err) {
+            return false;
+        }
     }
 
     private async organizeByExif(images: string[]) {
@@ -77,7 +123,7 @@ export class PBCOrganizer {
         console.log("Finding files with Exif segment...");
         for (const img of images) {
             const exif = await this.getExifData(img);
-            if (exif?.image?.Make && exif.image.Make.toLowerCase() === this.cfg.brand.toLowerCase()) {
+            if (exif?.Photo?.Make && exif.Photo.Make.toLowerCase() === this.cfg.brand.toLowerCase()) {
                 filesList.push(this.getFilesListItem(img, exif));
             }
         }
@@ -89,18 +135,31 @@ export class PBCOrganizer {
         return filesList;
     }
 
-    private getExifData(image: string): Promise<Exif.ExifData> {
-        return new Promise((resolve) => {
-            return new ExifImage({ image }, function(err, data) {
+    private async getExifData(file: string): Promise<any> {
+        const ext = path.extname(file).toLowerCase();
+        if (ext === '.mov' || ext === '.mp4') {
+            return this.getVideoMetadata(file);
+        } else {
+            const buffer = await fs.readFile(file);
+            const metadata = await sharp(buffer).metadata();
+            return metadata.exif ? exifReader(metadata.exif) : null;
+        }
+    }
+
+    private getVideoMetadata(file: string): Promise<any> {
+        return new Promise((resolve, reject) => {
+            ffmpeg.ffprobe(file, (err, metadata) => {
                 if (err) {
-                    console.log(`Error on ${image}: ${err.message}`);
+                    reject(err);
+                } else {
+                    const creationTime = metadata.format.tags?.creation_time;
+                    resolve({ DateTimeOriginal: creationTime });
                 }
-                return resolve(data);
             });
         });
     }
 
-    private getFilesListItem(img: string, exif: Exif.ExifData): FilesListItem {
+    private getFilesListItem(img: string, exif: any): FilesListItem {
         return {
             filename: img,
             brand: exif.image.Make || "",
