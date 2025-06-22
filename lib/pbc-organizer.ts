@@ -62,15 +62,31 @@ export class PBCOrganizer {
         for (const file of filesNotStartingWithDate) {
             const exifData = await this.getExifData(file);
             const dateTimeOriginal = exifData?.Photo?.DateTimeOriginal || exifData?.DateTimeOriginal;
-
             const dateTime = dayjs(dateTimeOriginal).format('YYYY-MM-DD HH.mm.ss');
-            const newFileName = `${dateTime}${path.extname(file).toLocaleLowerCase()}`;
-            await fs.rename(file, `${path.dirname(file)}${path.sep}${newFileName}`);
-            
+
+            let newFileName = `${dateTime}${path.extname(file).toLocaleLowerCase()}`;
+            let newFilePath = `${path.dirname(file)}${path.sep}${newFileName}`;
+            let counter = 1;
+            while (await this.fileExists(newFilePath)) {
+                newFileName = `${dateTime} (${counter})${path.extname(file).toLocaleLowerCase()}`;
+                newFilePath = `${path.dirname(file)}${path.sep}${newFileName}`;
+                counter++;
+            }
+            await fs.rename(file, newFilePath);
+
             console.log(`Renamed ${path.basename(file)} to ${newFileName}`);
         }
 
         console.log(`${filesNotStartingWithDate.length} files were renamed`);
+    }
+
+    private async fileExists(filePath: string): Promise<boolean> {
+        try {
+            await fs.access(filePath);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     private async organizeByDate(images: string[]) {
@@ -79,7 +95,7 @@ export class PBCOrganizer {
         for (const img of images) {
             const filename = path.basename(img);
             const dateMatch = RegExp(this.dateRegex).exec(filename);
-            
+
             if (dateMatch) {
                 const date = dateMatch[0];
                 const outDir = `${this.cfg.outdir}${path.sep}${date}`;
